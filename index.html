@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JLPT N3 互動教案與語音朗讀系統（全20堂 × 各50分鐘）</title>
+<style>
+  :root { --primary: #2563eb; --primary-dark: #1d4ed8; --bg-main: #f8fafc; --bg-card: #ffffff; --text-main: #1e293b; --text-muted: #64748b; --border: #e2e8f0; --accent: #10b981; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  header { background: #1e293b; color: #fff; padding: 10px 20px; flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; }
+  header .title { font-size: 1.1rem; font-weight: bold; }
+  header .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.85rem; }
+  .btn-group { display: flex; align-items: center; background: #334155; border-radius: 6px; padding: 2px 6px; }
+  .btn-group label { padding: 4px; color: #94a3b8; font-size: 0.8rem; }
+  .btn-group select { background: transparent; border: none; color: #fff; padding: 4px 6px; cursor: pointer; font-size: 0.85rem; }
+  .btn-group select option { background: #1e293b; color: #fff; }
+  .btn-ctrl { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  .btn-ctrl:hover { background: #2563eb; }
+  .btn-ctrl.stop { background: #ef4444; }
+  .btn-ctrl.stop:hover { background: #dc2626; }
+  .toggle-btn { background: #475569; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+  .toggle-btn.active { background: #10b981; }
+  .main-wrapper { display: flex; flex: 1; overflow: hidden; }
+  aside { width: 340px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar-header { padding: 15px; border-bottom: 1px solid var(--border); }
+  .search-box { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; margin-bottom: 10px; }
+  .progress-container { background: #f1f5f9; border-radius: 10px; height: 10px; overflow: hidden; margin-top: 5px; }
+  .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 0.3s; }
+  .lesson-list { flex: 1; overflow-y: auto; list-style: none; }
+  .lesson-item { padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+  .lesson-item:hover { background: #f1f5f9; }
+  .lesson-item.active { background: #eff6ff; border-left: 4px solid var(--primary); }
+  .lesson-item .num { font-size: 0.75rem; font-weight: bold; color: var(--primary); }
+  .lesson-item .title { font-size: 0.9rem; font-weight: bold; color: var(--text-main); margin: 2px 0; }
+  .lesson-item .grammar { font-size: 0.75rem; color: var(--text-muted); line-height: 1.3; }
+  main { flex: 1; overflow-y: auto; padding: 25px; background: var(--bg-main); }
+  .content-card { background: var(--bg-card); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+  .card-title { font-size: 1.2rem; font-weight: bold; color: var(--primary-dark); margin-bottom: 15px; border-bottom: 2px solid #eff6ff; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .plan-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.88rem; }
+  .plan-table th, .plan-table td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  .plan-table th { background: #f8fafc; color: var(--text-muted); }
+  .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .vocab-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+  .vocab-jp { font-size: 1.1rem; font-weight: bold; margin-bottom: 4px; }
+  .vocab-zh { font-size: 0.85rem; color: var(--text-muted); }
+  .grammar-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); }
+  .grammar-title { font-weight: bold; color: #1e293b; margin-bottom: 6px; font-size: 1rem; }
+  .example-box { background: #f1f5f9; border-left: 3px solid var(--primary); padding: 8px 12px; margin-top: 6px; border-radius: 0 4px 4px 0; font-size: 0.95rem; }
+  .text-paragraph { line-height: 1.8; font-size: 1rem; margin-bottom: 12px; padding: 10px; border-radius: 6px; background: #fafafa; border: 1px solid #f1f5f9; }
+  .tts-btn { background: #dbeafe; color: #1d4ed8; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; margin-left: 6px; vertical-align: middle; }
+  .tts-btn:hover { background: #bfdbfe; }
+  .quiz-q { margin-bottom: 15px; }
+  .quiz-q p { font-weight: bold; margin-bottom: 8px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 6px; }
+  .quiz-opt { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: #fff; font-size: 0.9rem; }
+  .quiz-opt:hover { background: #f8fafc; }
+  .quiz-opt.selected { border-color: var(--primary); background: #eff6ff; }
+  .quiz-opt.correct { border-color: #10b981; background: #d1fae5; }
+  .quiz-opt.wrong { border-color: #ef4444; background: #fee2e2; }
+  .explanation { font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; padding: 6px 10px; background: #f8fafc; border-radius: 4px; display: none; }
+  body.hide-furigana rt { display: none; }
+  body.hide-zh .zh-trans { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">🇯🇵 JLPT N3 互動教案與語音朗讀系統（全20堂 × 各50分鐘）</div>
+  <div class="controls">
+    <div class="btn-group">
+      <label>語速</label>
+      <select id="rateSelect" onchange="setRate(this.value)">
+        <option value="0.5">0.5x</option>
+        <option value="0.75">0.75x</option>
+        <option value="0.9">0.9x</option>
+        <option value="1.0" selected>1.0x</option>
+        <option value="1.25">1.25x</option>
+        <option value="1.5">1.5x</option>
+      </select>
+    </div>
+    <div class="btn-group">
+      <label>重複次數</label>
+      <select id="repeatSelect" onchange="setRepeat(this.value)">
+        <option value="1" selected>1次</option>
+        <option value="2">2次</option>
+        <option value="3">3次</option>
+        <option value="5">5次</option>
+        <option value="-1">無限循環</option>
+      </select>
+    </div>
+    <div class="btn-group">
+      <label>跟讀間隔</label>
+      <select id="intervalSelect" onchange="setIntervalMs(this.value)">
+        <option value="400">0.4秒</option>
+        <option value="800" selected>0.8秒</option>
+        <option value="1500">1.5秒</option>
+      </select>
+    </div>
+    <button class="btn-ctrl" onclick="togglePause()"><span id="pauseBtnText">暫停</span></button>
+    <button class="btn-ctrl stop" onclick="stopSpeech()">停止</button>
+    <button class="toggle-btn active" id="furiganaToggle" onclick="toggleFurigana()">假名讀音: 顯</button>
+    <button class="toggle-btn active" id="zhToggle" onclick="toggleZh()">中文翻譯: 顯</button>
+    <span id="speechStatus" style="font-size: 0.8rem; color: #60a5fa; margin-left: 5px;">進度: 就緒</span>
+  </div>
+</header>
+
+<div class="main-wrapper">
+  <aside>
+    <div class="sidebar-header">
+      <input type="text" class="search-box" id="searchInput" placeholder="搜尋課程標題或文法..." oninput="filterLessons()">
+      <div style="font-size: 0.8rem; font-weight: bold; color: var(--text-muted); display: flex; justify-content: space-between;">
+        <span>學習完成進度</span>
+        <span id="progressText">0 / 20 堂 (0%)</span>
+      </div>
+      <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+    <ul class="lesson-list" id="lessonList"></ul>
+  </aside>
+  <main id="mainContent"></main>
+</div>
+
+<script>
+const lessonsData = [
+  {
+    id: 1, title: "初めての富士登山(1)", grammarStr: "～始める/終わる、～ように言う、～ということ、～なさそうだ/～そうもない",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "富士山登頂經驗與安全準備注意事項討論" },
+      { time: "05-15m", phase: "核心語彙", content: "登山、装備、山頂、ご無沙汰、無理等重點詞彙" },
+      { time: "15-30m", phase: "文法精講", content: "動作開始/結束、轉述指示、傳聞解說、否定推測" },
+      { time: "30-40m", phase: "文章會話", content: "精讀《初めての富士登山》第一段與對話解析" },
+      { time: "40-50m", phase: "隨堂測驗", content: "即時測驗與句型活用複習" }
+    ],
+    vocab: [
+      { jp: "<ruby>富士山<rt>ふじさん</rt></ruby>", zh: "富士山" },
+      { jp: "<ruby>登<rt>のぼ</rt></ruby>り<ruby>始<rt>はじ</rt></ruby>める", zh: "開始爬" },
+      { jp: "<ruby>装備<rt>そうび</rt></ruby>", zh: "裝備" },
+      { jp: "<ruby>頂上<rt>ちょうじょう</rt></ruby>", zh: "山頂" },
+      { jp: "<ruby>無理<rt>むり</rt></ruby>をする", zh: "勉強；逞強" }
+    ],
+    grammar: [
+      { title: "1. ～始める / ～終わる (開始/結束)", detail: "接在動詞連用形(ます形去ます)之後，表示動作的開始或結束。", exJp: "雨が<ruby>降<rt>ふ</rt></ruby>り<ruby>始<rt>はじ</rt></ruby>めました。", exZh: "開始下雨了。" },
+      { title: "2. ～ように言う (轉述命令/要求)", detail: "表示轉述指示、請求或命令他人做某事。", exJp: "先生にもっと<ruby>勉強<rt>べんきょう</rt></ruby>するように言われました。", exZh: "被老師要求要更努力學習。" },
+      { title: "3. ～ということ (傳聞/內容解釋)", detail: "表達傳聞內容或進一步說明事情概念。", exJp: "明日は大雨だということです。", exZh: "據說明天會下大雨。" },
+      { title: "4. ～なさそうだ / ～そうもない (看起來不太可能)", detail: "對未來或現狀進行否定的推測。", exJp: "今日中に仕事は<ruby>終<rt>お</rt></ruby>わりそうもない。", exZh: "今天之內工作看起來不可能完成。" }
+    ],
+    text: [
+      { jp: "<ruby>来週<rt>らいしゅう</rt></ruby>、<ruby>友達<rt>ともだち</rt></ruby>と<ruby>富士山<rt>ふじさん</rt></ruby>に<ruby>登<rt>のぼ</rt></ruby>り<ruby>始<rt>はじ</rt></ruby>める<ruby>予定<rt>よてい</rt></ruby>です。", zh: "下週預計和朋友開始爬富士山。" },
+      { jp: "<ruby>ガイド<rt>がいど</rt></ruby>さんから、無理をしないように言われました。", zh: "導遊提醒我們不要逞強。" },
+      { jp: "<ruby>山頂<rt>ちょうじょう</rt></ruby>の<ruby>天候<rt>てんこう</rt></ruby>は<ruby>崩<rt>くず</rt></ruby>れなさそうですが、<ruby>防寒着<rt>ぼうかんぎ</rt></ruby>は<ruby>必要<rt>ひつよう</rt></ruby>です。", zh: "山頂的天氣看起來不會變差，但禦寒衣物是必要的。" }
+    ],
+    quiz: [
+      { q: "雨が（　）始めたので、傘をさした。", opts: ["降る", "降り", "降って", "降った"], ans: 1, exp: "～始める接動詞ます形字根「降り」。" },
+      { q: "医者から酒を（　）ように言われた。", opts: ["やめる", "やめろ", "やめ", "やめよう"], ans: 0, exp: "～ように言う 前接動詞辭書形或辭書形否定。" }
+    ]
+  },
+  {
+    id: 2, title: "初めての富士登山(2)", grammarStr: "～と/～たら、～ほど、～ていく/～てくる、～続ける、～なら",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "登高山高山症預防與沿途風景觀察討論" },
+      { time: "05-15m", phase: "核心語彙", content: "高山病、休憩、絶景、日の出等重點詞彙" },
+      { time: "15-30m", phase: "文法精講", content: "條件假定、程度比較、空間時間推移、持續動作" },
+      { time: "30-40m", phase: "文章會話", content: "《初めての富士登山》登頂過程與日出描述精讀" },
+      { time: "40-50m", phase: "隨堂測驗", content: "課後句型測驗與問題討論" }
+    ],
+    vocab: [
+      { jp: "<ruby>高山病<rt>こうざんびょう</rt></ruby>", zh: "高山症" },
+      { jp: "<ruby>休憩<rt>きゅうけい</rt></ruby>する", zh: "休息" },
+      { jp: "<ruby>絶景<rt>ぜっけい</rt></ruby>", zh: "絕景" },
+      { jp: "<ruby>日<rt>ひ</rt></ruby>の<ruby>出<rt>で</rt></ruby>", zh: "日出" },
+      { jp: "<ruby>歩<rt>ある</rt></ruby>き<ruby>続<rt>つづ</rt></ruby>ける", zh: "持續行走" }
+    ],
+    grammar: [
+      { title: "1. ～と / ～たら (條件假定/發現)", detail: "～と表示自然結果；～たら表示完成條件後的結果。", exJp: "山頂に着くと、綺麗な日の出が見えた。", exZh: "一到達山頂，就看到了美麗的日出。" },
+      { title: "2. ～ほど (越…越… / 程度)", detail: "表示比例程度或達到某種極限程度。", exJp: "登れば登るほど息が苦しくなる。", exZh: "越往上爬呼吸越困難。" },
+      { title: "3. ～ていく / ～てくる (方向與時間推移)", detail: "表示動作趨勢、方向或從過去到現在/未來的變化。", exJp: "空が明るくなってきました。", exZh: "天空漸漸亮了起來。" },
+      { title: "4. ～続ける (持續)", detail: "表示動作或狀態不間斷地繼續進行。", exJp: "諦めずに歩き続けましょう。", exZh: "不要放棄，繼續走下去吧。" },
+      { title: "5. ～なら (如果是…的話)", detail: "針對對方提到的話題進行承接與建議。", exJp: "富士山に登るなら、7月が一番いいです。", exZh: "如果是要爬富士山的話，7月是最棒的。" }
+    ],
+    text: [
+      { jp: "<ruby>夜中<rt>よなか</rt></ruby>から<ruby>歩<rt>ある</rt></ruby>き<ruby>続<rt>つづ</rt></ruby>けて、ようやく<ruby>八合目<rt>はちごうめ</rt></ruby>に<ruby>到着<rt>とうちゃく</rt></ruby>した。", zh: "從半夜開始持續行走，終於到達了八合目。" },
+      { jp: "<ruby>標高<rt>ひょうこう</rt></ruby>が<ruby>高<rt>たか</rt></ruby>くなるほど、<ruby>気温<rt>きおん</rt></ruby>が<ruby>下<rt>さ</rt></ruby>がっていく。", zh: "海拔越高，氣溫就越下降。" },
+      { jp: "<ruby>東<rt>ひがし</rt></ruby>の<ruby>空<rt>そら</rt></ruby>が<ruby>赤<rt>あか</rt></ruby>くなってくると、みんなから<ruby>歓声<rt>かんせい</rt></ruby>が<ruby>上<rt>あ</rt></ruby>がった。", zh: "當東邊的天空漸漸變紅時，大家都發出了歡呼聲。" }
+    ],
+    quiz: [
+      { q: "山頂に登れば（　）景色が素晴らしくなる。", opts: ["ほど", "くらい", "より", "だけ"], ans: 0, exp: "ば～ほど表示「越…越…」。" },
+      { q: "寒くなってきたので、上着を（　）。", opts: ["着ていく", "着てくる", "着続けた", "着たら"], ans: 1, exp: "～てくる表示漸漸產生的變化。" }
+    ]
+  },
+  {
+    id: 3, title: "ぼくの犬、クロ(1)", grammarStr: "～させてもらう、～させられる、～がる、～たとたん、～出す",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "分享寵物養育經驗與家庭回憶" },
+      { time: "05-15m", phase: "核心語彙", content: "ペット、飼う、散歩、嫌がる、急に等" },
+      { time: "15-30m", phase: "文法精講", content: "使役受身、Third-person感情表現、突發動作" },
+      { time: "30-40m", phase: "文章會話", content: "精讀《ぼくの犬、クロ》第一段故事" },
+      { time: "40-50m", phase: "隨堂測驗", content: "使役受身與語意轉化練習" }
+    ],
+    vocab: [
+      { jp: "<ruby>飼<rt>か</rt></ruby>い<ruby>犬<rt>いぬ</rt></ruby>", zh: "家犬" },
+      { jp: "<ruby>散歩<rt>さんぽ</rt></ruby>", zh: "散步" },
+      { jp: "<ruby>嫌<rt>いや</rt></ruby>がる", zh: "感到討厭" },
+      { jp: "<ruby>突然<rt>とつぜん</rt></ruby>", zh: "突然" },
+      { jp: "<ruby>走<rt>はし</rt></ruby>り<ruby>出<rt>だ</rt></ruby>す", zh: "突然跑起來" }
+    ],
+    grammar: [
+      { title: "1. ～させてもらう (請求允許做)", detail: "請求對方允許自己做某事。", exJp: "早帰らせてもらってもいいですか。", exZh: "可以讓我早點回家嗎？" },
+      { title: "2. ～させられる (使役被動：被迫做)", detail: "表示非出於本意而被要求做某事。", exJp: "野菜を食べさせられました。", exZh: "被迫吃蔬菜。" },
+      { title: "3. ～がる (表現出感情)", detail: "描述第三人稱的客觀心理感覺。", exJp: "クロは病院を嫌がります。", exZh: "Kuro很討厭去醫院。" },
+      { title: "4. ～たとたん (一…立刻…)", detail: "前項動作剛完成，緊接著發生後項。", exJp: "ドアを開けたとたん飛び出した。", exZh: "一打開門就跳了出來。" },
+      { title: "5. ～出す (突然開始…)", detail: "表示動作突然發動。", exJp: "急に雨が降り出しました。", exZh: "突然開始下雨。" }
+    ],
+    text: [
+      { jp: "<ruby>僕<rt>ぼく</rt></ruby>の<ruby>愛犬<rt>あいけん</rt></ruby>クロは、<ruby>散歩<rt>さんぽ</rt></ruby>の<ruby>時間<rt>じかん</rt></ruby>になると嬉しがります。", zh: "我的愛犬Kuro到了散步時間就會表現得很開心。" },
+      { jp: "<ruby>雨<rt>あめ</rt></ruby>の<ruby>日<rt>ひ</rt></ruby>は<ruby>外<rt>そと</rt></ruby>に出るのを嫌がります。", zh: "下雨天牠表現得很討厭出門。" },
+      { jp: "<ruby>公園<rt>こうえん</rt></ruby>に着いたとたん、走り出しました。", zh: "一到達公園，就突然奔跑起來。" }
+    ],
+    quiz: [
+      { q: "嫌な練習を何時間も（　）。", opts: ["させられた", "させてくれた", "した", "し始めた"], ans: 0, exp: "被迫做某事使用使役受身「させられた」。" },
+      { q: "雷が鳴った（　）、犬が吠え出した。", opts: ["とたん", "うちに", "ついでに", "ために"], ans: 0, exp: "～たとたん 表示「一…就突然…」。" }
+    ]
+  },
+  {
+    id: 4, title: "ぼくの犬、クロ(2)＆水泳大会(1)", grammarStr: "～ようとする/しない、～ことがある、～させておく、縮約形（～てる/～とく/～ちゃう/～なきゃ）、～っけ",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "談論日常生活口語縮約與記憶確認" },
+      { time: "05-15m", phase: "核心語彙", content: "水泳、大会、緊張、諦める、準備等" },
+      { time: "15-30m", phase: "文法精講", content: "試圖與意圖否定、偶爾/經驗、放任使役、口語縮約" },
+      { time: "30-40m", phase: "文章會話", content: "精讀水泳大會準備與口語對話" },
+      { time: "40-50m", phase: "隨堂測驗", content: "縮約形還原與意態活用練習" }
+    ],
+    vocab: [
+      { jp: "<ruby>水泳大会<rt>すいえいたいかい</rt></ruby>", zh: "游泳大會" },
+      { jp: "<ruby>緊張<rt>きんちょう</rt></ruby>する", zh: "緊張" },
+      { jp: "<ruby>諦<rt>あきら</rt></ruby>める", zh: "放棄" },
+      { jp: "<ruby>練習<rt>れんしゅう</rt></ruby>しておく", zh: "事先練習(縮約:とく)" },
+      { jp: "<ruby>忘<rt>わす</rt></ruby>れちゃう", zh: "不小心忘了(縮約:ちゃう)" }
+    ],
+    grammar: [
+      { title: "1. ～ようとする / ～ようとしない (企圖/完全不想)", detail: "～ようとする企圖做；～ようとしない完全無意圖。", exJp: "薬を飲もうとしません。", exZh: "完全不想吃藥。" },
+      { title: "2. ～ことがある (有時會…)", detail: "表示非經常性、偶爾發生的狀況。", exJp: "夜遅くまで起きていることがあります。", exZh: "偶爾會有熬夜的情況。" },
+      { title: "3. ～させておく (讓…保持某狀態)", detail: "使役形+ておく，表示放任某狀態。", exJp: "遊ばせておきましょう。", exZh: "就讓他們繼續玩吧。" },
+      { title: "4. 口語縮約形 (～てる/～とく/～ちゃう/～なきゃ)", detail: "てる、とく、ちゃう、なきゃ口語表達。", exJp: "準備しとかなきゃ！", exZh: "得快點做好準備！" },
+      { title: "5. ～っけ (回想確認)", detail: "用於回想或向對方確認記憶。", exJp: "何時からだっけ？", exZh: "是幾點開始來著？" }
+    ],
+    text: [
+      { jp: "クロは水に入ろうとしないけれど、練習を見ていた。", zh: "Kuro雖然完全不想下水，但一直看著練習。" },
+      { jp: "明日は早起きしなきゃいけないから、もう寝とくね。", zh: "明天必須早起，所以我先睡囉。" },
+      { jp: "集合場所って、プール前だっけ？", zh: "集合地點是游泳池前面來著嗎？" }
+    ],
+    quiz: [
+      { q: "いくら呼びかけても、彼は振り向こうと（　）。", opts: ["しない", "する", "した", "できる"], ans: 0, exp: "～ようとしない 表示完全沒有做某動作的打算。" },
+      { q: "明日までに宿題を完成させ（　）いけない。", opts: ["なきゃ", "ちゃ", "とく", "てる"], ans: 0, exp: "口語縮約形「～なきゃ」表示必須。" }
+    ]
+  },
+  {
+    id: 5, title: "市民農園の募集(1)", grammarStr: "～による/によって、～に対して、～ため(に)、～につき、～とおりだ/どおり",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "都市農園與公告海報閱讀技巧介紹" },
+      { time: "05-15m", phase: "核心語彙", content: "募集、市民農園、応募、条件、対象等" },
+      { time: "15-30m", phase: "文法精講", content: "依據/手段、對應對象、原因目的、告示原因、依照" },
+      { time: "30-40m", phase: "文章會話", content: "精讀市民農園募集公告(1)" },
+      { time: "40-50m", phase: "隨堂測驗", content: "公文書文法與告示用語辨析" }
+    ],
+    vocab: [
+      { jp: "<ruby>市民農園<rt>しみんのうえん</rt></ruby>", zh: "市民農園" },
+      { jp: "<ruby>募集<rt>ぼしゅう</rt></ruby>", zh: "招募" },
+      { jp: "<ruby>応募<rt>おうぼ</rt></ruby>する", zh: "報名" },
+      { jp: "<ruby>条件<rt>じょうけん</rt></ruby>", zh: "條件" },
+      { jp: "<ruby>抽選<rt>ちゅうせん</rt></ruby>", zh: "抽籤" }
+    ],
+    grammar: [
+      { title: "1. ～による / によって (依據/原因/方法)", detail: "表示依據不同情況而異或手段理由。", exJp: "人によって考え方が違います。", exZh: "想法因人而異。" },
+      { title: "2. ～に対して (對待/對比)", detail: "表示對象或兩者對比。", exJp: "お客様に対して失礼な態度をとってはいけない。", exZh: "對待顧客不可無禮。" },
+      { title: "3. ～ため(に) (因為/為了)", detail: "表示原因理由或目的。", exJp: "台風のため中止になりました。", exZh: "因颱風活動取消。" },
+      { title: "4. ～につき (由於…告示用語)", detail: "常用於告示、通知表示理由。", exJp: "工事中につき立入禁止。", exZh: "施工中禁止進入。" },
+      { title: "5. ～とおりだ / ～どおり (按照…)", detail: "表示與指示或計畫一致。", exJp: "計画通りに進めてください。", exZh: "請按照計畫推進。" }
+    ],
+    text: [
+      { jp: "本農園は市民に対して、野菜作りの場を提供するものです。", zh: "本農園旨在為市民提供栽種蔬菜的場所。" },
+      { jp: "応募者多数の場合は、抽選によって決定いたします。", zh: "若報名人數過多，將透過抽籤決定。" },
+      { jp: "清掃中につき、足元にご注意ください。", zh: "打掃中請注意腳下。" }
+    ],
+    quiz: [
+      { q: "台風の（　）、電車が運転を見合わせている。", opts: ["ため", "つき", "とおり", "対して"], ans: 0, exp: "～ため 表示原因理由。" },
+      { q: "説明書（　）組み立ててください。", opts: ["のとおりに", "によって", "につき", "に対して"], ans: 0, exp: "名詞+のとおりに 表示「按照…」。" }
+    ]
+  },
+  {
+    id: 6, title: "市民農園の募集(2)", grammarStr: "～を通して/通じて、～のような/ように、～によれば…～ということだ/とのことだ、～について",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "社區活動體驗與成果分享談論" },
+      { time: "05-15m", phase: "核心語彙", content: "体験、交流、収穫、アンケート、報告等" },
+      { time: "15-30m", phase: "文法精講", content: "透過媒介、舉例說明、據消息來源傳聞、關於" },
+      { time: "30-40m", phase: "文章會話", content: "精讀市民農園成果報告與訪問文章" },
+      { time: "40-50m", phase: "隨堂測驗", content: "閱讀理解與複合句型測驗" }
+    ],
+    vocab: [
+      { jp: "<ruby>通<rt>とお</rt></ruby>して", zh: "透過" },
+      { jp: "<ruby>収穫<rt>しゅうかく</rt></ruby>", zh: "收穫" },
+      { jp: "<ruby>交流<rt>こうりゅう</rt></ruby>", zh: "交流" },
+      { jp: "<ruby>農家<rt>のうか</rt></ruby>", zh: "農家" },
+      { jp: "<ruby>新鮮<rt>しんせん</rt></ruby>な", zh: "新鮮的" }
+    ],
+    grammar: [
+      { title: "1. ～を通して / 通じて (透過/貫穿)", detail: "表示以某物為媒介或貫穿時間。", exJp: "農業体験を通して学んだ。", exZh: "透過務農體驗學到了經驗。" },
+      { title: "2. ～のような / ように (像…一樣)", detail: "用於舉例或比喻。", exJp: "トマトのような野菜。", exZh: "像番茄一樣的蔬菜。" },
+      { title: "3. ～によれば…～ということだ/とのことだ (據說)", detail: "引用消息來源表達傳聞。", exJp: "天気予報によれば晴れるとのことだ。", exZh: "根據預報據說會放晴。" },
+      { title: "4. ～について (關於…)", detail: "表示思考談論的對象。", exJp: "利用方法について質問があります。", exZh: "關於使用方法有疑問。" }
+    ],
+    text: [
+      { jp: "一年を通じた農作業により、地域住民との交流が深まりました。", zh: "透過長達一年的農事，與居民交流加深了。" },
+      { jp: "ニュースによれば、今年のトマトは甘いとのことです。", zh: "根據新聞報導，據說今年的番茄很甜。" },
+      { jp: "今後の活動について意見を交換しましょう。", zh: "關於今後活動一起交換意見吧。" }
+    ],
+    quiz: [
+      { q: "友人（　）知合った二人だ。", opts: ["を通して", "について", "のように", "によって"], ans: 0, exp: "～を通して 表示透過中間媒介。" },
+      { q: "天気予報（　）と、午後は雨が降るそうだ。", opts: ["によれば", "について", "に対して", "のために"], ans: 0, exp: "～によれば 表示據消息來源。" }
+    ]
+  },
+  {
+    id: 7, title: "水泳大会(2)", grammarStr: "～たって、～に決まってる、～じゃない、～ばよかった、～てばかりいる",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "比賽檢討與遺憾感情表達討論" },
+      { time: "05-15m", phase: "核心語彙", content: "悔しい、優勝、記録、反省、後悔等" },
+      { time: "15-30m", phase: "文法精講", content: "即使/哪怕、必定/一定、強烈主張、要是…就好了、總是" },
+      { time: "30-40m", phase: "文章會話", content: "精讀水泳大會賽後對話與心得" },
+      { time: "40-50m", phase: "隨堂測驗", content: "口語感情表達句型練習" }
+    ],
+    vocab: [
+      { jp: "<ruby>悔<rt>くや</rt></ruby>しい", zh: "不甘心" },
+      { jp: "<ruby>優勝<rt>ゆうしょう</rt></ruby>", zh: "冠軍" },
+      { jp: "<ruby>記録<rt>きろく</rt></ruby>", zh: "紀錄" },
+      { jp: "<ruby>後悔<rt>こうかい</rt></ruby>", zh: "後悔" },
+      { jp: "<ruby>反省<rt>はんせい</rt></ruby>", zh: "反省" }
+    ],
+    grammar: [
+      { title: "1. ～たって (即使…也…)", detail: "等於～ても，口語讓步。", exJp: "後悔したって始まらない。", exZh: "即使後悔也於事無補。" },
+      { title: "2. ～に決まってる (肯定…)", detail: "表達說話者強烈直覺推測。", exJp: "勝つに決まっている！", exZh: "肯定會贏的！" },
+      { title: "3. ～じゃない (不是…嗎？)", detail: "反問或強調看法。", exJp: "頑張ったじゃないか。", exZh: "你不是已經很努力了嗎？" },
+      { title: "4. ～ばよかった (要是…就好了)", detail: "對過去未做的事感到後悔。", exJp: "練習しておけばよかった。", exZh: "要是那時多練習就好了。" },
+      { title: "5. ～てばかりいる (總是/光是…)", detail: "重複做同一件事帶有無奈。", exJp: "遊んでばかりいないで。", exZh: "不要光顧著玩。" }
+    ],
+    text: [
+      { jp: "決勝で負けて悔しい！もっと練習しておけばよかった。", zh: "決賽輸了很不甘心！要是多練習就好了。" },
+      { jp: "泣いていたって結果は変わらないよ。", zh: "即使哭泣結果也不會改變的呀。" },
+      { jp: "君なら次も優勝できるに決まってるじゃない！", zh: "你的話下次也肯定能拿冠軍的不是嗎！" }
+    ],
+    quiz: [
+      { q: "あんなに勉強したんだから、合格するに（　）。", opts: ["決まっている", "ばよかった", "たって", "ばかりいる"], ans: 0, exp: "～に決まっている 表示強烈肯定推測。" },
+      { q: "ゲーム（　）いないで、宿題をしなさい。", opts: ["してばかり", "したって", "すれば", "するのに"], ans: 0, exp: "～てばかりいる 表示光是做某事。" }
+    ]
+  },
+  {
+    id: 8, title: "手作りハムのレシピ(1)&(2)", grammarStr: "AはもちろんBも、～ほど～ない、～かわりに、～せずに、～たまま、～きる/きれない",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "料理步驟說明與烹飪用語介紹" },
+      { time: "05-15m", phase: "核心語彙", content: "レシピ、材料、塩漬け、保存、切り分ける等" },
+      { time: "15-30m", phase: "文法精講", content: "不僅A連B也、不如…那般、代替/補償、不…而、保持…狀態、徹底完成/做不完" },
+      { time: "30-40m", phase: "文章會話", content: "精讀手工火腿製作食譜說明" },
+      { time: "40-50m", phase: "隨堂測驗", content: "料理步驟文法與副詞銜接測驗" }
+    ],
+    vocab: [
+      { jp: "<ruby>手造<rt>てづく</rt></ruby>り", zh: "手工製作" },
+      { jp: "<ruby>材料<rt>ざいりょう</rt></ruby>", zh: "材料" },
+      { jp: "<ruby>熟成<rt>じゅくせい</rt></ruby>", zh: "熟成" },
+      { jp: "<ruby>火<rt>ひ</rt></ruby>を通す", zh: "加熱煮熟" },
+      { jp: "<ruby>保存<rt>ほぞん</rt></ruby>", zh: "保存" }
+    ],
+    grammar: [
+      { title: "1. AはもちろんBも (A自不待言，B也…)", detail: "連同更進一步事物包含在內。", exJp: "味はもちろん、見た目も素晴らしい。", exZh: "味道自不用說，外觀也很棒。" },
+      { title: "2. ～ほど～ない (沒有像…那樣)", detail: "比較表示達不到該程度。", exJp: "市販のハムは手作りほど美味しくない。", exZh: "市售火腿沒手工那麼好吃。" },
+      { title: "3. ～かわりに (代替)", detail: "表示代替或補償條件。", exJp: "砂糖の代わりにハチミツを使います。", exZh: "用蜂蜜代替砂糖。" },
+      { title: "4. ～ずに (不…而…)", detail: "等於～ないで。", exJp: "火を使わずに作れる。", exZh: "不用火就能做。" },
+      { title: "5. ～たまま (保持…狀態)", detail: "維持動作完成後狀態。", exJp: "ラップをしたまま寝かせます。", exZh: "蓋著保鮮膜靜置。" },
+      { title: "6. ～きる / きれない (徹底做完/做不完)", detail: "極限或無法完全完成。", exJp: "一人では食べきれない。", exZh: "一個人吃不完。" }
+    ],
+    text: [
+      { jp: "手作りハムは味はもちろん、安全面でも安心です。", zh: "手工火腿的味道自不用說，安全也很安心。" },
+      { jp: "添加物を使わずに、塩とスパイスだけで熟成させます。", zh: "不使用添加物，僅靠鹽與香料熟成。" },
+      { jp: "量が多いので、一度には食べきれません。", zh: "因為份量大，一次吃不完。" }
+    ],
+    quiz: [
+      { q: "テレビを見る（　）、ラジオを聞く。", opts: ["かわりに", "まま", "ずに", "きれずに"], ans: 0, exp: "～かわりに 表示代替。" },
+      { q: "電気をつけ（　）寝てしまった。", opts: ["たまま", "ずに", "きって", "ほど"], ans: 0, exp: "～たまま 表示保持著某狀態。" }
+    ]
+  },
+  {
+    id: 9, title: "里山について(1)", grammarStr: "～おかげで、～を通じて(期間)、～というと/といえば、～べきだ、～にとって",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "日本里山文化與自然共生概念介紹" },
+      { time: "05-15m", phase: "核心語彙", content: "里山、生態系、保全、恩恵、多様性等" },
+      { time: "15-30m", phase: "文法精講", content: "多虧/幸虧、貫穿期間、提到/說起、應該/義務、對…而言" },
+      { time: "30-40m", phase: "文章會話", content: "精讀《里山について》自然保護文章" },
+      { time: "40-50m", phase: "隨堂測驗", content: "環境與社會議題文法練習" }
+    ],
+    vocab: [
+      { jp: "<ruby>里山<rt>さとやま</rt></ruby>", zh: "里山區域" },
+      { jp: "<ruby>生態系<rt>せいたいけい</rt></ruby>", zh: "生態系統" },
+      { jp: "<ruby>恩恵<rt>おんけい</rt></ruby>", zh: "恩惠" },
+      { jp: "<ruby>保全<rt>ほぜん</rt></ruby>", zh: "保育" },
+      { jp: "<ruby>多様性<rt>たようせい</rt></ruby>", zh: "多樣性" }
+    ],
+    grammar: [
+      { title: "1. ～おかげで (多虧)", detail: "好的原因產生正面結果。", exJp: "協力のおかげで自然が守られた。", exZh: "多虧合作自然得以保護。" },
+      { title: "2. ～を通じて (貫穿期間)", detail: "在整個時間段內維持。", exJp: "一年を通じて動植物が見られる。", exZh: "一年四季都看得見動植物。" },
+      { title: "3. ～というと / といえば (提到…)", detail: "聯想典型事物。", exJp: "日本の自然といえば里山だ。", exZh: "提到日本自然就是里山。" },
+      { title: "4. ～べきだ (應該…)", detail: "常理或道德義務。", exJp: "環境を保護するべきだ。", exZh: "應該保護環境。" },
+      { title: "5. ～にとって (對…而言)", detail: "從某立場角度看。", exJp: "人間にとっても大切だ。", exZh: "對人類而言也很重要。" }
+    ],
+    text: [
+      { jp: "ボランティアのおかげで、美しい里山が保全されています。", zh: "多虧志工，美麗里山得以維護。" },
+      { jp: "日本の里山といえば、人と自然が共生する素晴らしいモデルです。", zh: "說起里山，是人與自然共生的典範。" },
+      { jp: "この貴重な生態系は、次世代へ継承していくべきです。", zh: "珍貴生態系理應傳承給下一代。" }
+    ],
+    quiz: [
+      { q: "先生の教えの（　）、N3に合格できました。", opts: ["おかげで", "せいで", "にとって", "べきだ"], ans: 0, exp: "～おかげで 表示多虧好的原因。" },
+      { q: "環境問題は、全員が真剣に考える（　）。", opts: ["べきだ", "おかげだ", "というと", "を通じて"], ans: 0, exp: "～べきだ 表示理應做某事。" }
+    ]
+  },
+  {
+    id: 10, title: "里山について(2)", grammarStr: "～ば～ほど、～による(原因)、～ばかりでなく/ばかりか、～たびに、～はずだ",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "生物多樣性與環境變遷議題回顧" },
+      { time: "05-15m", phase: "核心語彙", content: "温暖化、影響、観察、毎回、確信等" },
+      { time: "15-30m", phase: "文法精講", content: "越…越…、原因歸因、不僅…而且…、每當…就…、照理說應該" },
+      { time: "30-40m", phase: "文章會話", content: "精讀里山生態調查報告與論述" },
+      { time: "40-50m", phase: "隨堂測驗", content: "綜合論理結構文法測驗" }
+    ],
+    vocab: [
+      { jp: "<ruby>環境破壊<rt>かんきょうはかい</rt></ruby>", zh: "環境破壞" },
+      { jp: "<ruby>影響<rt>えいきょう</rt></ruby>", zh: "影響" },
+      { jp: "<ruby>観察<rt>かんさつ</rt></ruby>", zh: "觀察" },
+      { jp: "<ruby>訪<rt>おとず</rt></ruby>れる", zh: "造訪" },
+      { jp: "<ruby>実感<rt>じっかん</rt></ruby>", zh: "切身感受" }
+    ],
+    grammar: [
+      { title: "1. ～ば～ほど (越…就越…)", detail: "前者加深後者越顯著。", exJp: "調べれば調べるほど魅力がわかる。", exZh: "越調查越了解魅力。" },
+      { title: "2. ～による (起因於…)", detail: "造成某現象的原因。", exJp: "手入れ不足による変化。", exZh: "起因於缺乏照顧的變化。" },
+      { title: "3. ～ばかりでなく / ばかりか (不僅…而且…)", detail: "擴及其他範圍。", exJp: "植物ばかりか昆虫も生息する。", exZh: "不僅植物昆蟲也棲息。" },
+      { title: "4. ～たびに (每當…就…)", detail: "每次伴隨發生。", exJp: "訪れるたびに発見がある。", exZh: "每當造訪都有新發現。" },
+      { title: "5. ～はずだ (按理說應該)", detail: "客觀邏輯推斷必然結果。", exJp: "保護すれば回復するはずだ。", exZh: "保護的話理應會恢復。" }
+    ],
+    text: [
+      { jp: "里山を訪れるたびに、豊かな自然に心が癒やされます。", zh: "每當造訪里山，心靈都被治癒。" },
+      { jp: "開発による環境破壊は、動物ばかりか人間にも影響を及ぼす。", zh: "起因於開發的破壞，不僅對動物對人類也有影響。" },
+      { jp: "進めれば進めるほど、重要性が理解できるはずだ。", zh: "越推進理應就越能理解重要性。" }
+    ],
+    quiz: [
+      { q: "この本は読む（　）新しい発見がある。", opts: ["たびに", "ばほど", "はずだ", "による"], ans: 0, exp: "～たびに 表示每次做某事時。" },
+      { q: "彼は真面目だから、約束を守る（　）。", opts: ["はずだ", "たびに", "ばかりか", "により"], ans: 0, exp: "～はずだ 表示理應會進行推斷。" }
+    ]
+  },
+  {
+    id: 11, title: "不動産屋で(1)", grammarStr: "～ますと/ですと、～ようなら、～もので/ものですから、～なんか、～かと思う",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "在戶外租房情境與房產仲介會話入門" },
+      { time: "05-15m", phase: "核心語彙", content: "物件、家賃、徒歩、日当たり、敷金等" },
+      { time: "15-30m", phase: "文法精講", content: "丁寧簡述、條件觀察、原因辯解、輕視/舉例、主觀推測" },
+      { time: "30-40m", phase: "文章會話", content: "精讀不動產店內房屋租賃對話(1)" },
+      { time: "40-50m", phase: "隨堂測驗", content: "禮貌會話與生活情境文法測驗" }
+    ],
+    vocab: [
+      { jp: "<ruby>不動産屋<rt>ふどうさんや</rt></ruby>", zh: "房屋仲介" },
+      { jp: "<ruby>物件<rt>ぶっけん</rt></ruby>", zh: "房屋物件" },
+      { jp: "<ruby>家賃<rt>やちん</rt></ruby>", zh: "房租" },
+      { jp: "<ruby>徒歩<rt>とほ</rt></ruby>", zh: "步行" },
+      { jp: "<ruby>日当<rt>ひあ</rt></ruby>たり", zh: "採光" }
+    ],
+    grammar: [
+      { title: "1. ～ますと / ですと (如果…的話)", detail: "丁寧語+と向顧客說明條件。", exJp: "徒歩5分となりますと高くなります。", exZh: "如果是步行5分鐘的話會較貴。" },
+      { title: "2. ～ようなら (若似乎是…)", detail: "根據跡象給予建議。", exJp: "重視されるようならこちらです。", exZh: "若重視的話推薦這間。" },
+      { title: "3. ～もので / ものですから (因為…藉口)", detail: "說明個人客觀原因或解釋。", exJp: "初めてなもので不安です。", exZh: "因為是第一次所以不安。" },
+      { title: "4. ～なんか (像…這種的)", detail: "舉例自謙口氣。", exJp: "私なんかでよろしければ。", exZh: "若不介意像我這樣的人。" },
+      { title: "5. ～かと思う (覺得似乎…)", detail: "委婉表達個人想法。", exJp: "少し高いかと思われます。", exZh: "我覺得房租似乎稍高。" }
+    ],
+    text: [
+      { jp: "いらっしゃいませ。どのような物件をお探しでしょうか。", zh: "歡迎光臨！請問您在找什麼物件？" },
+      { jp: "駅から近い場所となりますと、家賃8万円以上になります。", zh: "若是離車站近的話房租要8萬日圓以上。" },
+      { jp: "静かな環境がお好みなものですから、郊外の部屋もお見せします。", zh: "因為您喜歡安靜環境，也給您看郊區房間。" }
+    ],
+    quiz: [
+      { q: "初めてな（　）、ご迷惑をおかけするかもしれません。", opts: ["もので", "ますと", "ようなら", "なんか"], ans: 0, exp: "～もので 表示委婉說明個人理由。" },
+      { q: "お気に召さない（　）、別の部屋もお探しします。", opts: ["ようなら", "ますと", "ものですから", "なんか"], ans: 0, exp: "～ようなら 表示若是某情況的話。" }
+    ]
+  },
+  {
+    id: 12, title: "不動産屋で(2)", grammarStr: "～うちに(自然変化)、～たばかり、～ばいいのに、～てもらってもいいですか、～ことはない",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "簽約流程與房客要求表達" },
+      { time: "05-15m", phase: "核心語彙", content: "契約、敷金、礼金、リフォーム、確認等" },
+      { time: "15-30m", phase: "文法精講", content: "趁著/自然變化、剛…不久、要是…就好了、能否請你做…、沒必要" },
+      { time: "30-40m", phase: "文章會話", content: "精讀房屋看房與條款確認會話" },
+      { time: "40-50m", phase: "隨堂測驗", content: "生活溝通與請求表達測驗" }
+    ],
+    vocab: [
+      { jp: "<ruby>契約<rt>けいやく</rt></ruby>", zh: "簽約" },
+      { jp: "<ruby>敷金<rt>しききん</rt></ruby>", zh: "押金" },
+      { jp: "<ruby>礼金<rt>れいきん</rt></ruby>", zh: "禮金" },
+      { jp: "<ruby>築浅<rt>ちくあさ</rt></ruby>", zh: "屋齡新" },
+      { jp: "<ruby>內見<rt>ないけん</rt></ruby>", zh: "實地看房" }
+    ],
+    grammar: [
+      { title: "1. ～うちに (趁著…/不知不覺變化)", detail: "在狀態持續期間做某事或自然變化。", exJp: "明るいうちに内見に行きましょう。", exZh: "趁著天亮去看房吧。" },
+      { title: "2. ～たばかり (剛…不久)", detail: "主觀認為動作剛發生。", exJp: "完成したばかりです。", exZh: "剛完工不久。" },
+      { title: "3. ～ばいいのに (要是…就好了)", detail: "表達希望或建議遺憾。", exJp: "安ければいいのに。", exZh: "要是能便宜點就好了。" },
+      { title: "4. ～てもらってもいいですか (能否請您做…)", detail: "委婉提出請求。", exJp: "確認してもらってもいいですか。", exZh: "能否請您確認一下？" },
+      { title: "5. ～ことはない (沒有必要…)", detail: "安慰建議不需要。", exJp: "心配することはありません。", exZh: "不需要擔心的。" }
+    ],
+    text: [
+      { jp: "築浅でリフォームしたばかりの綺麗な部屋ですね。", zh: "這是屋齡新且剛翻修完的漂亮房間呢。" },
+      { jp: "忘れないうちに、質問したいことをメモしておきます。", zh: "趁著還沒忘記先記在備忘錄上。" },
+      { jp: "初期費用について詳しく説明してもらってもいいですか。", zh: "關於初期費用能否請您說明詳細些？" }
+    ],
+    quiz: [
+      { q: "先月引っ越した（　）なので、まだ荷物が片付いていない。", opts: ["ばかり", "うちに", "ことはない", "ばいいのに"], ans: 0, exp: "～たばかり 表示剛完成某動作不久。" },
+      { q: "わざわざ遠くまで行く（　）よ。近くで買えるから。", opts: ["ことはない", "ばかりだ", "うちに", "てもらってもいい"], ans: 0, exp: "～ことはない 表示沒有必要去做。" }
+    ]
+  },
+  {
+    id: 13, title: "就職の面接", grammarStr: "ビジネス敬語（お/ご～いただく・くださる、お目にかかる、存じ上げる、拝見する、お/ご～です、～ていらっしゃる、～させていただく）",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "日本求職面試禮儀與商務敬語基礎" },
+      { time: "05-15m", phase: "核心語彙", content: "面接、志望動機、自己PR、経歴、御社等" },
+      { time: "15-30m", phase: "文法精講", content: "謙譲語Ⅰ/Ⅱ與尊敬語體系拆解" },
+      { time: "30-40m", phase: "文章會話", content: "精讀日企求職面試對話全劇" },
+      { time: "40-50m", phase: "隨堂測驗", content: "商務敬語轉換與面試應答實戰" }
+    ],
+    vocab: [
+      { jp: "<ruby>面接<rt>めんせつ</rt></ruby>", zh: "面試" },
+      { jp: "<ruby>志望動機<rt>しぼうどうき</rt></ruby>", zh: "應徵動機" },
+      { jp: "<ruby>御社<rt>おんしゃ</rt></ruby>", zh: "貴公司" },
+      { jp: "<ruby>自己<rt>じこ</rt></ruby>PR", zh: "自我推薦" },
+      { jp: "<ruby>拝見<rt>はいけん</rt></ruby>する", zh: "拜讀(謙讓)" }
+    ],
+    grammar: [
+      { title: "1. お/ご～いただく・くださる (請/蒙受)", detail: "お/ご+連用形+いただく/くださる。", exJp: "お越しいただきありがとうございます。", exZh: "感謝您撥冗前來。" },
+      { title: "2. お目にかかる (見面・謙讓)", detail: "會う的謙讓語。", exJp: "お目にかかれて光栄です。", exZh: "能與您見面非常榮幸。" },
+      { title: "3. 存じ上げる (知道・謙讓)", detail: "知っている的謙讓語。", exJp: "製品について存じ上げております。", exZh: "我很瞭解貴公司產品。" },
+      { title: "4. 拝見する (看・謙讓)", detail: "見る的謙讓語。", exJp: "拝見いたしました。", exZh: "我已拜讀過。" },
+      { title: "5. お/ご～です / ～ていらっしゃる (尊敬)", detail: "對長輩動作尊崇。", exJp: "どのような事業をお考えですか。", exZh: "您思考什麼事業呢？" }
+    ],
+    text: [
+      { jp: "本日お目にかかれて大変嬉しく存じます。", zh: "今天能與您見面我感到非常高興。" },
+      { jp: "御社の事業内容を拝見し、ぜひ貢献したいと考えております。", zh: "拜讀了貴公司事業內容後非常希望有所貢獻。" },
+      { jp: "ご質問に丁寧にお答えさせていただきます。", zh: "請允許我詳細回答問題。" }
+    ],
+    quiz: [
+      { q: "履歴書を（　）いたしました。（看過）", opts: ["拝見", "ご覧", "お目にかかり", "存じ上げ"], ans: 0, exp: "「見る」的謙讓語為「拝見する」。" },
+      { q: "社長の著書を（　）おります。（知道）", opts: ["存じ上げて", "お目にかかって", "拝見して", "いらっしゃって"], ans: 0, exp: "「知っている」對人事物的謙讓語為「存じ上げている」。" }
+    ]
+  },
+  {
+    id: 14, title: "お花見(1)&(2)", grammarStr: "～てからでなければ、～かのようだ、～うちに、～向け/向き、～最中に、～かけ、～ずにはいられない",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "日本賞花文化與季節性活動習俗討論" },
+      { time: "05-15m", phase: "核心語彙", content: "満開、桜、場所取り、最中、向け等" },
+      { time: "15-30m", phase: "文法精講", content: "非先…否則不、宛如…一般、趁著、面向/適合、正當…之際、做了一半、忍不住" },
+      { time: "30-40m", phase: "文章會話", content: "精讀《お花見》計畫與公園現場對話" },
+      { time: "40-50m", phase: "隨堂測驗", content: "情境描繪與文法實務應用" }
+    ],
+    vocab: [
+      { jp: "<ruby>花見<rt>はなみ</rt></ruby>", zh: "賞花" },
+      { jp: "<ruby>満開<rt>まんかい</rt></ruby>", zh: "盛開" },
+      { jp: "<ruby>桜吹雪<rt>さくらふぶき</rt></ruby>", zh: "櫻花雨" },
+      { jp: "<ruby>外国人向け<rt>がいこくじんむけ</rt></ruby>", zh: "針對外國人" },
+      { jp: "<ruby>場所取<rt>ばしょと</rt></ruby>り", zh: "佔位子" }
+    ],
+    grammar: [
+      { title: "1. ～てからでなければ (如果不先…就不)", detail: "前項未完後項無法實現。", exJp: "許可をもらってからでなければできません。", exZh: "不先取得許可就不能做。" },
+      { title: "2. ～かのようだ (宛如…一般)", detail: "感覺像那樣的比喻。", exJp: "雪が降っているかのようだ。", exZh: "宛如在下雪一般。" },
+      { title: "3. ～向け / ～向き (面向/適合)", detail: "專門針對對象或適合對象。", exJp: "家族向けの企画です。", exZh: "針對家庭設計的企劃。" },
+      { title: "4. ～最中に (正當…熱烈之際)", detail: "動作高潮時突發事件。", exJp: "花見の最中に雨が降った。", exZh: "正賞花時下起雨。" },
+      { title: "5. ～かけ (做了一半)", detail: "動作未完成狀態。", exJp: "飲みかけのお茶。", exZh: "喝到一半的茶。" },
+      { title: "6. ～ずにはいられない (忍不住)", detail: "無法抑制衝動感嘆。", exJp: "写真を撮らずにはいられない。", exZh: "忍不住要拍照。" }
+    ],
+    text: [
+      { jp: "上野公園は満開で、雲の上の領域にいるかのようだ。", zh: "上野公園盛開，宛如置身雲端。" },
+      { jp: "写真を撮っている最中に、桜吹雪が舞った。", zh: "正在拍照時舞動出陣陣櫻花雨。" },
+      { jp: "美しさに感嘆の声を上げずにはいられない。", zh: "太美了令人忍不住讚嘆。" }
+    ],
+    quiz: [
+      { q: "この弁当は子供（　）に作られています。", opts: ["向け", "最中", "かけ", "かのよう"], ans: 0, exp: "～向け 表示專門針對某對象設計。" },
+      { q: "食べ（　）のパンがテーブルにある。", opts: ["かけ", "最中", "向き", "ずにはいられない"], ans: 0, exp: "～かけ 表示做了一半未完成。" }
+    ]
+  },
+  {
+    id: 15, title: "ゆきの選択(1)", grammarStr: "～わけがない/～っこない、～しかない/～ほかない、～からこそ、～からといって…～とは限らない",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "人生抉擇與升學就業職涯討論" },
+      { time: "05-15m", phase: "核心語彙", content: "選択、進路、挑戦、決意、限界等" },
+      { time: "15-30m", phase: "文法精講", content: "絕不可能、只能/唯有、正因為…才、雖說…未必…" },
+      { time: "30-40m", phase: "文章會話", content: "精讀《ゆきの選択》第一段心路歷程" },
+      { time: "40-50m", phase: "隨堂測驗", content: "邏輯推論與否定句型表達測驗" }
+    ],
+    vocab: [
+      { jp: "<ruby>進路<rt>しんろ</rt></ruby>", zh: "升學就業出路" },
+      { jp: "<ruby>選択<rt>せんたく</rt></ruby>", zh: "選擇" },
+      { jp: "<ruby>挑戦<rt>ちょうせん</rt></ruby>", zh: "挑戰" },
+      { jp: "<ruby>決意<rt>けつい</rt></ruby>", zh: "決心" },
+      { jp: "<ruby>後悔<rt>こうかい</rt></ruby>", zh: "後悔" }
+    ],
+    grammar: [
+      { title: "1. ～わけがない / ～っこない (絕不可能)", detail: "常理否定或強烈口語絕不可能。", exJp: "一発で受かりっこない。", exZh: "絕不可能一次考上。" },
+      { title: "2. ～しかない / ～ほかない (只能)", detail: "別無選擇唯有做該動作。", exJp: "頑張るしかない。", exZh: "只能加油了。" },
+      { title: "3. ～からこそ (正因為…才)", detail: "強調正是此理由才有後果。", exJp: "失敗したからこそ価値がある。", exZh: "正因失敗過才有價值。" },
+      { title: "4. ～からといって…～とは限らない (雖說…未必)", detail: "駁斥必然結論。", exJp: "有名大学を出たからといって成功するとは限らない。", exZh: "雖說名校畢業未必成功。" }
+    ],
+    text: [
+      { jp: "進路に迷ったけれど、夢を諦めるわけにはいかない。", zh: "雖然迷惘但絕不能放棄夢想。" },
+      { jp: "大変だからこそ、挑戦する価値があります。", zh: "正因為辛苦才具有挑戰價值。" },
+      { jp: "反対されたからといって、意志を曲げるとは限らない。", zh: "雖說被反對也未必違背意志。" }
+    ],
+    quiz: [
+      { q: "彼が嘘をつく（　）がない。", opts: ["わけ", "からこそ", "しか", "からといって"], ans: 0, exp: "～わけがない 表示絕不可能。" },
+      { q: "高価だからといって、良いものだ（　）。", opts: ["とは限らない", "からこそ", "しかない", "っこない"], ans: 0, exp: "～からといって…～とは限らない 表示雖說…未必…。" }
+    ]
+  },
+  {
+    id: 16, title: "ゆきの選択(2)＆友だちのお見舞い(1)", grammarStr: "～くせに、～っぽい/～気味/～らしい、～せいで、～っぱなし、～だらけ、～さえ",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "探病禮儀與健康狀態描述" },
+      { time: "05-15m", phase: "核心語彙", content: "お見舞い、風邪気味、怪我、放置、不満等" },
+      { time: "15-30m", phase: "文法精講", content: "明明…卻、傾向/帶有氣味、歸咎於、放任不管、滿是、連…都" },
+      { time: "30-40m", phase: "文章會話", content: "精讀探病與抱怨日常生活對話" },
+      { time: "40-50m", phase: "隨堂測驗", content: "狀態與感情描繪語彙練習" }
+    ],
+    vocab: [
+      { jp: "<ruby>見舞<rt>みま</rt></ruby>い", zh: "探病" },
+      { jp: "<ruby>風邪気味<rt>かぜぎみ</rt></ruby>", zh: "微感感冒" },
+      { jp: "<ruby>油段<rt>ゆだん</rt></ruby>", zh: "疏忽" },
+      { jp: "<ruby>泥<rt>どろ</rt></ruby>だらけ", zh: "滿是泥巴" },
+      { jp: "<ruby>放<rt>ほう</rt></ruby>っておく", zh: "放置不管" }
+    ],
+    grammar: [
+      { title: "1. ～くせに (明明…卻)", detail: "帶指責口吻前後不相稱。", exJp: "知らないくせにフリをするな。", exZh: "明明不知道就別裝懂。" },
+      { title: "2. ～っぽい / ～気味 / ～らしい (傾向屬性)", detail: "帶有某性質、微覺負面傾向或符合特徵。", exJp: "風邪気味で熱っぽい。", exZh: "有點感冒傾向且感覺發燒。" },
+      { title: "3. ～せいで (都怪…)", detail: "壞的原因造成不好結果。", exJp: "不注意のせいで怪我をした。", exZh: "都怪不小心受傷了。" },
+      { title: "4. ～っぱなし (放置不管)", detail: "動作完成後放任不管帶責備。", exJp: "出しっぱなしにしないで。", exZh: "不要一直放著不管。" },
+      { title: "5. ～だらけ (滿是…)", detail: "佈滿不好的東西。", exJp: "ゴミだらけだ。", exZh: "滿是垃圾。" },
+      { title: "6. ～さえ (連…都)", detail: "極端例子強調程度。", exJp: "水飲む時間さえなかった。", exZh: "連喝水時間都沒有。" }
+    ],
+    text: [
+      { jp: "友達が入院したと聞いてお見舞いに行きました。", zh: "聽說朋友住院去探病。" },
+      { jp: "油断したせいで風邪をひいてしまったそうです。", zh: "據說都怪大意結果感冒了。" },
+      { jp: "書類が間違いだらけで怒られました。", zh: "文件滿是錯誤被罵了。" }
+    ],
+    quiz: [
+      { q: "雨の（　）、試合が延期になった。", opts: ["せいで", "おかげで", "くせに", "だらけ"], ans: 0, exp: "～せいで 表示負面原因。" },
+      { q: "服が泥（　）になってしまった。", opts: ["だらけ", "気味", "っぽい", "くせに"], ans: 0, exp: "～だらけ 表示滿是不好的東西。" }
+    ]
+  },
+  {
+    id: 17, title: "友だちのお見舞い(2)＆わけ表現", grammarStr: "～ついでに、～に違いない、～ほど…はない、～ぬきで、～てしょうがない、わけだ/わけではない/わけにはいかない",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "探病伴手禮挑選與『わけ』句法統整" },
+      { time: "05-15m", phase: "核心語彙", content: "お土産、ついで、確信、我慢、当然等" },
+      { time: "15-30m", phase: "文法精講", content: "順便、肯定無誤、沒有比…更…、省去/排除、非常/不得了、わけ系統全面解析" },
+      { time: "30-40m", phase: "文章會話", content: "精讀探病心得與《わけ》表現專題文章" },
+      { time: "40-50m", phase: "隨堂測驗", content: "わけ三兄弟辨析與實務演練" }
+    ],
+    vocab: [
+      { jp: "<ruby>買物<rt>かいもの</rt></ruby>", zh: "購物" },
+      { jp: "<ruby>確信<rt>かくしん</rt></ruby>", zh: "確信" },
+      { jp: "<ruby>見舞<rt>みま</rt></ruby>い品", zh: "探病禮物" },
+      { jp: "<ruby>冗談<rt>じょうだん</rt></ruby>", zh: "玩笑" },
+      { jp: "<ruby>退院<rt>たいいん</rt></ruby>", zh: "出院" }
+    ],
+    grammar: [
+      { title: "1. ～ついでに (順便)", detail: "利用主要動作機會做次要動作。", exJp: "散歩のついでに郵便局へ行った。", exZh: "散步順便去郵局。" },
+      { title: "2. ～に違いない (一定是…)", detail: "強烈根據推斷。", exJp: "無事に退院できるに違いない。", exZh: "一定能平安出院的。" },
+      { title: "3. ～ほど…はない (沒有比…更…)", detail: "最高程度比較。", exJp: "健康ほど大切なものはない。", exZh: "沒有比健康更重要的。" },
+      { title: "4. ～ぬきで (省去…)", detail: "排除或省去。", exJp: "冗談ぬきで話しましょう。", exZh: "撇開玩笑認真談談。" },
+      { title: "5. ～てしょうがない (…得不得了)", detail: "無法控制的感受感情。", exJp: "お腹が空いてしょうがない。", exZh: "肚子餓得不得了。" },
+      { title: "6. わけ表現 (わけだ / わけではない / わけにはいかない)", detail: "わけだ(難怪)；わけではない(並非)；わけにはいかない(情理上不能)。", exJp: "売れるわけだ。/ 全員賛成なわけではない。/ 休むわけにはいかない。", exZh: "難怪暢銷。/ 並非全體贊成。/ 不能請假。" }
+    ],
+    text: [
+      { jp: "病院に行くついでに果物を買いに行きました。", zh: "去醫院順便買了水果。" },
+      { jp: "やっぱり健康ほどありがたいものはありませんね。", zh: "果然沒有比健康更值得感謝的事了。" },
+      { jp: "重要な会議があるので休むわけにはいかないのです。", zh: "有重要會議在情理上不能請假。" }
+    ],
+    quiz: [
+      { q: "買い物に行く（　）、手紙を出してきて。", opts: ["ついでに", "ぬきで", "に違いない", "てしょうがない"], ans: 0, exp: "～ついでに 表示利用順便機會。" },
+      { q: "責任者だから、途中でやめる（　）。", opts: ["わけにはいかない", "わけではない", "わけだ", "ついでだ"], ans: 0, exp: "～わけにはいかない 表示道德情理上不能去做。" }
+    ]
+  },
+  {
+    id: 18, title: "N3語彙・表現特訓：擬音語・擬態語＆身體慣用句", grammarStr: "擬音語・擬態語（ぐっすり、いらいら、ほっと、うきうき、ぴったり、ぺらぺら）＆身體慣用句（気に入る、気になる、気をつかう、心を打つ、目がない、耳が遠い、口が軽い、手につかない）",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "副詞疊音詞與身體器官慣用句趣旨" },
+      { time: "05-15m", phase: "核心語彙", content: "ぐっすり、いらいら、ほっと、気に入る、気をつかう等" },
+      { time: "15-30m", phase: "文法精講", content: "擬音語擬態語分類記憶與身體慣用句靈活應用" },
+      { time: "30-40m", phase: "文章會話", content: "精讀包含豐富擬聲擬態語與慣用句的情境短文" },
+      { time: "40-50m", phase: "隨堂測驗", content: "副詞與慣用句配對實戰練習" }
+    ],
+    vocab: [
+      { jp: "ぐっすり", zh: "熟睡地" },
+      { jp: "いらいら", zh: "焦躁地" },
+      { jp: "ほっと", zh: "鬆了一口氣" },
+      { jp: "うきうき", zh: "歡欣雀躍地" },
+      { jp: "ぴったり", zh: "貼緊；剛好" },
+      { jp: "ぺらぺら", zh: "流利地" }
+    ],
+    grammar: [
+      { title: "1. N3必考擬音語・擬態語", detail: "ぐっすり(熟睡)、いらいら(焦躁)、ほっと(安心)、うきうき(雀躍)、ぴったり(貼緊)、ぺらぺら(流利)。", exJp: "テストが終わってほっとした。", exZh: "考試結束鬆了一口氣。" },
+      { title: "2. N3必考身體慣用句 (氣/心/目/耳/口/手)", detail: "気に入る(中意)、気になる(介意)、気をつかう(顧慮)、心を打つ(打動人心)、目がない(極度沉迷)、耳が遠い(重聽)、口が軽い(守不住秘密)、手につかない(沒心思做)。", exJp: "心配で仕事が手につかない。", exZh: "擔心得工作沒心思做。" }
+    ],
+    text: [
+      { jp: "昨日は疲れていたので、朝までぐっすり眠れました。", zh: "昨天累壞了所以一覺熟睡到天亮。" },
+      { jp: "彼女は日本語がぺらぺらで、本当に感心します。", zh: "她日語說得極為流利令人佩服。" },
+      { jp: "発表直前は緊張で仕事が手につきませんでした。", zh: "發表前夕因為緊張工作沒心思做。" }
+    ],
+    quiz: [
+      { q: "疲れていたので、（　）寝てしまった。", opts: ["ぐっすり", "いらいら", "ぺらぺら", "うきうき"], ans: 0, exp: "ぐっすり 表示熟睡地。" },
+      { q: "甘いものに（　）がない。", opts: ["目", "耳", "口", "手"], ans: 0, exp: "「目がない」表示極度沉迷喜愛。" }
+    ]
+  },
+  {
+    id: 19, title: "N3読解ストラテジー実践：接続詞・指示詞・ビジネス文章", grammarStr: "接続詞（ところが、つまり、なぜなら、その上、一方、むしろ）、指示詞、ビジネスメールと意見文",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "N3長篇文章與商務郵件閱讀解題戰術" },
+      { time: "05-15m", phase: "核心語彙", content: "ところが、つまり、なぜなら、その上、一方、むしろ" },
+      { time: "15-30m", phase: "文法精講", content: "轉折、換言之、因果、遞進、對比與指示代名詞定位" },
+      { time: "30-40m", phase: "文章會話", content: "精讀商務電子郵件與意見文長篇" },
+      { time: "40-50m", phase: "隨堂測驗", content: "閱讀邏輯接續詞模擬題演練" }
+    ],
+    vocab: [
+      { jp: "ところが", zh: "然而(出乎意料)" },
+      { jp: "つまり", zh: "換言之" },
+      { jp: "なぜなら", zh: "之所以是因為" },
+      { jp: "その<ruby>上<rt>うえ</rt></ruby>", zh: "再加上" },
+      { jp: "<ruby>一方<rt>いっぽう</rt></ruby>", zh: "另一方面" },
+      { jp: "むしろ", zh: "反而" }
+    ],
+    grammar: [
+      { title: "1. 轉折與逆接接續詞 (ところが / むしろ)", detail: "ところが表示出乎預料轉折；むしろ表示不如說更恰當。", exJp: "晴れだった。ところが雨が降ってきた。", exZh: "說是晴天然而卻下起雨。" },
+      { title: "2. 總結與因果接續詞 (つまり / なぜなら)", detail: "つまり進行歸納；なぜなら用於補充說明原因。", exJp: "来なかった。なぜなら体調を崩したからだ。", exZh: "沒來之所以是因為身體不適。" },
+      { title: "3. 遞進與對比接續詞 (その上 / 一方)", detail: "その上累加；一方比較。", exJp: "安くて美味しい。その上サービスもいい。", exZh: "便宜好吃再加上服務棒。" }
+    ],
+    text: [
+      { jp: "件名：打ち合わせ日程の変更について", zh: "主旨：關於會議日程變更" },
+      { jp: "予定していたミーティングですが、都合により延期させていただきます。なぜなら出張が入ったためです。", zh: "原定會議因故延期，之所以是因為安排了出差。" },
+      { jp: "ご迷惑をおかけしますが、よろしくお願い申し上げます。", zh: "造成不便深感抱歉尚祈見諒。" }
+    ],
+    quiz: [
+      { q: "彼は優秀だ。（　）、努力家でもある。", opts: ["その上", "ところが", "なぜなら", "むしろ"], ans: 0, exp: "「その上」表示遞進補充說明。" },
+      { q: "試合に勝った。（　）、喜ぶ者は誰もいなかった。", opts: ["ところが", "つまり", "なぜなら", "その上"], ans: 0, exp: "「ところが」表示出乎意料的逆接轉折。" }
+    ]
+  },
+  {
+    id: 20, title: "N3総合実戦：情報検索＆全20堂總まとめ模擬テスト", grammarStr: "情報検索（以上・以内・未満・除く・別途の条件比較）＆全20堂總まとめ模擬測試",
+    plan: [
+      { time: "00-05m", phase: "暖身", content: "N3資訊檢索題型拆解與關鍵字條件快速比對技巧" },
+      { time: "05-15m", phase: "核心語彙", content: "以上、以内、未満、除く、別途、割引等" },
+      { time: "15-30m", phase: "文法精講", content: "數詞與範圍條件關聯詞（以上/以下/未滿/排除）精講" },
+      { time: "30-40m", phase: "文章會話", content: "精讀綜合模擬廣告公告與條件比對題目" },
+      { time: "40-50m", phase: "隨堂測驗", content: "全20堂總總結綜合測試" }
+    ],
+    vocab: [
+      { jp: "<ruby>以上<rt>いじょう</rt></ruby>", zh: "以上(含)" },
+      { jp: "<ruby>以内<rt>いない</rt></ruby>", zh: "以內(含)" },
+      { jp: "<ruby>未満<rt>みまん</rt></ruby>", zh: "未滿(不含)" },
+      { jp: "<ruby>除<rt>のぞ</rt></ruby>く", zh: "排除" },
+      { jp: "<ruby>別途<rt>べっと</rt></ruby>", zh: "另外" }
+    ],
+    grammar: [
+      { title: "1. 範圍條件關鍵字辨析", detail: "以上(含)、以下(含)、未満(不含)、超える(不含)、除く(排除)。", exJp: "小学生未満は無料、ただし諸費用は別途必要。", exZh: "未滿小學生免費但雜費另計。" },
+      { title: "2. N3文法總結與關鍵句型回顧", detail: "掌握時態、敬語、否定、使役被動與資訊比對的核心綜合應用能力。", exJp: "条件をしっかり確認して正しい結論を導きましょう。", exZh: "仔細確認條件導出正確結論。" }
+    ],
+    text: [
+      { jp: "【スポーツジム利用案内】", zh: "【健身房使用指南】" },
+      { jp: "18歳以上の方にご利用いただけます。ただし高校生を除く。", zh: "年滿18歲以上者皆可使用但高中生除外。" },
+      { jp: "料金は月額5000円以内ですが、ロッカー代は別途かかります。", zh: "費用在每月5000日圓以內但置物櫃費用另計。" }
+    ],
+    quiz: [
+      { q: "12歳（　）の子供は保護者の同伴が必要です。（12歲與以下）", opts: ["以下", "未満", "除く", "別途"], ans: 0, exp: "「以下」包含本數。" },
+      { q: "日曜・祝日を（　）、毎日営業しております。", opts: ["除く", "以上", "未満", "以内"], ans: 0, exp: "「動詞除く」表示排除星期日與國定假日。" }
+    ]
+  }
+];
+
+let synth = window.speechSynthesis;
+let currentUtterance = null;
+let currentRate = 1.0;
+let targetRepeatCount = 1;
+let currentRepeatCount = 0;
+let intervalMs = 800;
+let activeText = "";
+let isPaused = false;
+let currentLessonId = 1;
+let completedLessons = new Set();
+
+function init() { renderSidebar(); loadLesson(1); }
+function setRate(val) { currentRate = parseFloat(val); }
+function setRepeat(val) { targetRepeatCount = parseInt(val); }
+function setIntervalMs(val) { intervalMs = parseInt(val); }
+
+function speak(text) {
+  if (!text) return;
+  activeText = text;
+  synth.cancel();
+  isPaused = false;
+  document.getElementById('pauseBtnText').innerText = '暫停';
+  const cleanText = text.replace(/<rt>[^<]*<\/rt>/g, '').replace(/<[^>]*>/g, '');
+  
+  function playOnce() {
+    currentUtterance = new SpeechSynthesisUtterance(cleanText);
+    currentUtterance.lang = 'ja-JP';
+    currentUtterance.rate = currentRate;
+    currentUtterance.onstart = () => {
+      const repLabel = targetRepeatCount === -1 ? '無限' : targetRepeatCount;
+      document.getElementById('speechStatus').innerText = `朗讀中 (${currentRepeatCount + 1}/${repLabel})`;
+    };
+    currentUtterance.onend = () => {
+      currentRepeatCount++;
+      const repLabel = targetRepeatCount === -1 ? '無限' : targetRepeatCount;
+      if (targetRepeatCount === -1 || currentRepeatCount < targetRepeatCount) {
+        document.getElementById('speechStatus').innerText = `等待間隔 ${intervalMs/1000}s (${currentRepeatCount}/${repLabel})`;
+        setTimeout(() => { if (synth.speaking || synth.pending || currentUtterance) playOnce(); }, intervalMs);
+      } else {
+        document.getElementById('speechStatus').innerText = `已完成 (${currentRepeatCount}/${repLabel})`;
+        currentRepeatCount = 0;
+      }
+    };
+    currentUtterance.onerror = () => { document.getElementById('speechStatus').innerText = '語音播放失敗'; };
+    synth.speak(currentUtterance);
+  }
+  currentRepeatCount = 0;
+  playOnce();
+}
+
+function togglePause() {
+  if (synth.speaking) {
+    if (isPaused) {
+      synth.resume(); isPaused = false;
+      document.getElementById('pauseBtnText').innerText = '暫停';
+      document.getElementById('speechStatus').innerText = '繼續朗讀';
+    } else {
+      synth.pause(); isPaused = true;
+      document.getElementById('pauseBtnText').innerText = '繼續';
+      document.getElementById('speechStatus').innerText = '已暫停';
+    }
+  }
+}
+
+function stopSpeech() {
+  synth.cancel(); isPaused = false; currentRepeatCount = 0;
+  document.getElementById('pauseBtnText').innerText = '暫停';
+  document.getElementById('speechStatus').innerText = '已停止';
+}
+
+function toggleFurigana() {
+  document.body.classList.toggle('hide-furigana');
+  const btn = document.getElementById('furiganaToggle');
+  const isHidden = document.body.classList.contains('hide-furigana');
+  btn.innerText = `假名讀音: ${isHidden ? '隱' : '顯'}`;
+  btn.classList.toggle('active', !isHidden);
+}
+
+function toggleZh() {
+  document.body.classList.toggle('hide-zh');
+  const btn = document.getElementById('zhToggle');
+  const isHidden = document.body.classList.contains('hide-zh');
+  btn.innerText = `中文翻譯: ${isHidden ? '隱' : '顯'}`;
+  btn.classList.toggle('active', !isHidden);
+}
+
+function playFullText(lessonId) {
+  const lesson = lessonsData.find(l => l.id === lessonId);
+  if (!lesson) return;
+  speak(lesson.text.map(t => t.jp).join(" "));
+}
+
+function renderSidebar() {
+  const list = document.getElementById('lessonList');
+  list.innerHTML = '';
+  lessonsData.forEach(l => {
+    const li = document.createElement('li');
+    li.className = `lesson-item ${l.id === currentLessonId ? 'active' : ''}`;
+    li.onclick = () => loadLesson(l.id);
+    const numStr = l.id < 10 ? `L0${l.id}` : `L${l.id}`;
+    const isDone = completedLessons.has(l.id) ? ' ✅' : '';
+    li.innerHTML = `<div class="num">${numStr}${isDone}</div><div class="title">${l.title}</div><div class="grammar">${l.grammarStr}</div>`;
+    list.appendChild(li);
+  });
+  const pct = Math.round((completedLessons.size / 20) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').innerText = `${completedLessons.size} / 20 堂 (${pct}%)`;
+}
+
+function filterLessons() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const items = document.querySelectorAll('.lesson-item');
+  lessonsData.forEach((l, idx) => {
+    const match = l.title.toLowerCase().includes(q) || l.grammarStr.toLowerCase().includes(q);
+    items[idx].style.display = match ? 'block' : 'none';
+  });
+}
+
+function loadLesson(id) {
+  currentLessonId = id; stopSpeech(); renderSidebar();
+  const lesson = lessonsData.find(l => l.id === id);
+  const main = document.getElementById('mainContent');
+  const numStr = lesson.id < 10 ? `L0${lesson.id}` : `L${lesson.id}`;
+
+  let html = `
+    <div class="content-card">
+      <div class="card-title">
+        <span>${numStr} ${lesson.title}</span>
+        <button class="btn-ctrl" onclick="playFullText(${lesson.id})">▶️ 全文連播朗讀</button>
+      </div>
+      <h3 style="margin-bottom: 8px; font-size: 1rem; color: var(--text-main);">① 50分鐘教案流程表</h3>
+      <table class="plan-table">
+        <thead><tr><th>時間段</th><th>教學階段</th><th>教案重點與活動內容</th></tr></thead>
+        <tbody>${lesson.plan.map(p => `<tr><td><b>${p.time}</b></td><td>${p.phase}</td><td>${p.content}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+
+    <div class="content-card">
+      <div class="card-title">② 核心單字卡</div>
+      <div class="vocab-grid">
+        ${lesson.vocab.map(v => `
+          <div class="vocab-card">
+            <div class="vocab-jp">${v.jp} <button class="tts-btn" onclick="speak('${v.jp}')">🔊</button></div>
+            <div class="vocab-zh zh-trans">${v.zh}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="card-title">③ 文法精講與例句</div>
+      ${lesson.grammar.map(g => `
+        <div class="grammar-item">
+          <div class="grammar-title">${g.title}</div>
+          <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 4px;">${g.detail}</div>
+          <div class="example-box">
+            ${g.exJp} <button class="tts-btn" onclick="speak('${g.exJp}')">🔊</button>
+            <div class="zh-trans" style="font-size: 0.85rem; color: #475569; margin-top: 2px;">${g.exZh}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="content-card">
+      <div class="card-title">④ 主題課文與對話精讀</div>
+      ${lesson.text.map(t => `
+        <div class="text-paragraph">
+          <div>${t.jp} <button class="tts-btn" onclick="speak('${t.jp}')">🔊</button></div>
+          <div class="zh-trans" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">${t.zh}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="content-card">
+      <div class="card-title">⑤ 隨堂互動測驗</div>
+      ${lesson.quiz.map((q, qIdx) => `
+        <div class="quiz-q" id="q_${qIdx}">
+          <p>Q${qIdx+1}. ${q.q}</p>
+          <div class="quiz-options">
+            ${q.opts.map((opt, optIdx) => `
+              <div class="quiz-opt" onclick="checkAnswer(${id}, ${qIdx}, ${optIdx}, ${q.ans})">${optIdx+1}. ${opt}</div>
+            `).join('')}
+          </div>
+          <div class="explanation" id="exp_${qIdx}">解析：${q.exp}</div>
+        </div>
+      `).join('')}
+      <button class="btn-ctrl" style="margin-top: 10px;" onclick="finishLesson(${id})">完成本課並更新學習進度</button>
+    </div>
+  `;
+  main.innerHTML = html;
+}
+
+function checkAnswer(lessonId, qIdx, selectedIdx, correctIdx) {
+  const qDiv = document.getElementById(`q_${qIdx}`);
+  const opts = qDiv.querySelectorAll('.quiz-opt');
+  opts.forEach((opt, idx) => {
+    opt.classList.remove('selected', 'correct', 'wrong');
+    if (idx === selectedIdx) { opt.classList.add(selectedIdx === correctIdx ? 'correct' : 'wrong'); }
+    if (idx === correctIdx) { opt.classList.add('correct'); }
+  });
+  document.getElementById(`exp_${qIdx}`).style.display = 'block';
+}
+
+function finishLesson(id) {
+  completedLessons.add(id);
+  renderSidebar();
+  alert(`🎉 恭喜完成第 ${id} 堂課！進度已更新。`);
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
